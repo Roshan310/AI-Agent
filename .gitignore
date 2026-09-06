@@ -11,4 +11,6 @@ wheels/
 .python-version
 
 .env
+*.txt
+
 

@@ -1,0 +1,26 @@
+import os
+
+
+def write_file(working_directory: str, file_path: str, content: str) -> str:
+    try:
+        abs_working_dir = os.path.abspath(working_directory)
+        target_dir = os.path.normpath(os.path.join(abs_working_dir, file_path))
+        if os.path.commonpath([abs_working_dir, target_dir]) != abs_working_dir:
+            return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
+        if not os.path.isfile(target_dir):
+            f'Error: File not found or is not a regular file: "{file_path}"'
+
+        if os.path.isdir(target_dir):
+            f'Error: Cannot write to "{file_path}" as it is a directory'
+
+        ## If parent directories doesn't exist, it will create it. If they exist, nothing will happen (that's why
+        ## we used exist_ok=True).
+        os.makedirs(os.path.dirname(abs_working_dir), exist_ok=True)
+        with open(target_dir, "w") as f:
+            f.write(content)
+            return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
+
+
+        
+    except Exception as e:
+        return f"Error listing files: {e}"
