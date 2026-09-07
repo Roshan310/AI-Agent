@@ -2,6 +2,11 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import argparse
+from prompts import SYSTEM_PROMPT
+from call_function import available_functions
+import json
+from call_function import call_function
+
 
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -22,22 +27,28 @@ client = OpenAI(
 )
 
 messages = [
-    {"role": "user", "content": args.user_prompt}
+    {"role": "system", "content": SYSTEM_PROMPT},
+    {"role": "user", "content": args.user_prompt},
 ]
 
 response = client.chat.completions.create(
     model="openrouter/free",
-    messages=messages
+    messages=messages,
+    tools=available_functions,
 )
+
+message = response.choices[0].message
+
+if message.tool_calls:
+    for tool_call in message.tool_calls:
+        function_args = json.loads(tool_call.function.arguments or {})
+        print(f"Calling function: {tool_call.function.name}({function_args})")
+
+        if args.verbose:
+            result_message = call_function(tool_call=tool_call, verbose=True)
+            print(f"-> {result_message["content"]}")
+
 
 if response.usage == None:
     raise RuntimeError("API request failed")
 
-if args.verbose:
-    print(f"User prompt: {args.user_prompt}")
-    print(f"Prompt tokens: {response.usage.prompt_tokens}")
-    print(f"Response tokens: {response.usage.completion_tokens}")
-    print(response.choices[0].message.content)
-
-else:
-    print(response.choices[0].message.content)
